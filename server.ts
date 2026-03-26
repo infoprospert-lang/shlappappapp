@@ -9,7 +9,7 @@ import archiver from "archiver";
 import FormData from "form-data";
 import { fileURLToPath } from "url";
 import cookieParser from "cookie-parser";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import dotenv from "dotenv";
 import { generateAllPdfs, type PdfResult } from "./pdfGenerator.js";
 dotenv.config();
@@ -270,22 +270,13 @@ function buildEmailHtml(d: any, docStatus: DocStatus[]): string {
 }
 
 async function sendJobSummaryEmail(jobData: any, files: any[], pdfs: PdfResult[] = []): Promise<void> {
-  const host = process.env.SMTP_HOST;
   const officeEmail = process.env.OFFICE_EMAIL;
-  if (!host || !officeEmail) {
-    console.log("Email skipped: SMTP_HOST or OFFICE_EMAIL not configured.");
+  if (!process.env.RESEND_API_KEY || !officeEmail) {
+    console.log("Email skipped: RESEND_API_KEY or OFFICE_EMAIL not configured.");
     return;
   }
 
-  const transporter = nodemailer.createTransport({
-    host,
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: process.env.SMTP_SECURE === "true",
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   // Compute document status before building email
   const docStatus = computeDocumentStatus(jobData);
@@ -307,8 +298,10 @@ async function sendJobSummaryEmail(jobData: any, files: any[], pdfs: PdfResult[]
   const orderId = jobData.orderId || jobData.id;
   const companyShort = jobData.company === "swientek-glaeser" ? "Swientek & Gläser" : "Auto-Misselwitz";
 
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM || `"AppSchleppen" <${process.env.SMTP_USER}>`,
+  const fromAddress = process.env.SMTP_FROM || `AppSchleppen <onboarding@resend.dev>`;
+
+  await resend.emails.send({
+    from: fromAddress,
     to: officeEmail,
     subject: `Einsatz abgeschlossen: ${orderId} – ${companyShort}`,
     html: buildEmailHtml(jobData, docStatus),

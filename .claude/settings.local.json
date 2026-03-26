@@ -5,7 +5,8 @@
       "Read(//mnt/c/Users/Kevin Möhring/Documents/**)",
       "Bash(find '/c/Users/Kevin Möhring/Documents/ClaudeCode' -name *.pdf -o -name *.docx -o -name *.doc)",
       "Bash(npm install:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm uninstall:*)"
     ]
   }
 }
